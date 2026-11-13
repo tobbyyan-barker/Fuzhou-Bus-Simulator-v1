@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="BusParams" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/vehicle/bus_params.gd" id="1_params"]
+
+[resource]
+script = ExtResource("1_params")
+display_name = "闽通 MT-10"
+mass_kg = 12000.0
+center_of_mass = Vector3(0, 0.95, 0)
+max_engine_force = 35000.0
+max_brake_force = 800.0
+rolling_brake = 100.0
+reverse_force_ratio = 0.35
+top_speed_kmh = 110.0
+reverse_top_kmh = 20.0
+max_steer_deg = 38.0
+steer_lerp_rate = 5.0
+wheel_radius = 0.5
+wheel_friction_slip = 2.0
+suspension_rest_length = 0.35
+suspension_stiffness = 40.0
+suspension_max_force = 35000.0
+suspension_travel = 5.0
+damping_compression = 1.2
+damping_relaxation = 1.5
+cab_eye_transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.75, 2.35, -3.7)

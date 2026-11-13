@@ -1,0 +1,189 @@
+[gd_scene load_steps=19 format=3]
+
+[ext_resource type="Script" path="res://scripts/vehicle/bus_controller.gd" id="1_controller"]
+[ext_resource type="Resource" path="res://data/vehicles/mt10.tres" id="2_params"]
+[ext_resource type="Script" path="res://scripts/vehicle/gearbox.gd" id="3_gearbox"]
+
+[sub_resource type="StandardMaterial3D" id="mat_body"]
+albedo_color = Color(0.93, 0.94, 0.96, 1)
+roughness = 0.35
+metallic = 0.15
+
+[sub_resource type="StandardMaterial3D" id="mat_glass"]
+transparency = 1
+albedo_color = Color(0.45, 0.65, 0.85, 0.55)
+roughness = 0.08
+metallic = 0.4
+
+[sub_resource type="StandardMaterial3D" id="mat_dark"]
+albedo_color = Color(0.13, 0.13, 0.15, 1)
+roughness = 0.85
+
+[sub_resource type="StandardMaterial3D" id="mat_accent"]
+albedo_color = Color(0.12, 0.35, 0.72, 1)
+roughness = 0.4
+
+[sub_resource type="StandardMaterial3D" id="mat_interior"]
+albedo_color = Color(0.42, 0.4, 0.38, 1)
+roughness = 0.9
+
+[sub_resource type="BoxMesh" id="mesh_body"]
+material = SubResource("mat_body")
+size = Vector3(2.5, 1.7, 10.5)
+
+[sub_resource type="BoxMesh" id="mesh_windows"]
+material = SubResource("mat_glass")
+size = Vector3(2.52, 0.8, 8.8)
+
+[sub_resource type="BoxMesh" id="mesh_roof"]
+material = SubResource("mat_body")
+size = Vector3(2.5, 0.18, 10.5)
+
+[sub_resource type="BoxMesh" id="mesh_windshield"]
+material = SubResource("mat_glass")
+size = Vector3(2.3, 1.15, 0.08)
+
+[sub_resource type="BoxMesh" id="mesh_skirt"]
+material = SubResource("mat_accent")
+size = Vector3(2.54, 0.5, 9.8)
+
+[sub_resource type="BoxMesh" id="mesh_bumper"]
+material = SubResource("mat_dark")
+size = Vector3(2.56, 0.4, 0.3)
+
+[sub_resource type="CylinderMesh" id="mesh_wheel"]
+material = SubResource("mat_dark")
+top_radius = 0.5
+bottom_radius = 0.5
+height = 0.4
+radial_segments = 24
+
+[sub_resource type="BoxMesh" id="mesh_dashboard"]
+material = SubResource("mat_interior")
+size = Vector3(2.2, 0.4, 0.5)
+
+[sub_resource type="BoxMesh" id="mesh_seat"]
+material = SubResource("mat_interior")
+size = Vector3(0.55, 0.12, 0.5)
+
+[sub_resource type="BoxMesh" id="mesh_seatback"]
+material = SubResource("mat_interior")
+size = Vector3(0.55, 0.6, 0.12)
+
+[sub_resource type="TorusMesh" id="mesh_steerwheel"]
+material = SubResource("mat_dark")
+inner_radius = 0.14
+outer_radius = 0.19
+
+[sub_resource type="BoxShape3D" id="chassis_shape"]
+size = Vector3(2.5, 2.7, 10.4)
+
+[node name="BusMT10" type="VehicleBody3D"]
+script = ExtResource("1_controller")
+params = ExtResource("2_params")
+
+[node name="ChassisCollision" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.8, 0)
+shape = SubResource("chassis_shape")
+
+[node name="Gearbox" type="Node" parent="."]
+script = ExtResource("3_gearbox")
+
+[node name="BodyLower" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
+mesh = SubResource("mesh_body")
+
+[node name="WindowBand" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.45, -0.55)
+mesh = SubResource("mesh_windows")
+
+[node name="Roof" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.94, 0)
+mesh = SubResource("mesh_roof")
+
+[node name="WindshieldFront" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.0, -5.15)
+mesh = SubResource("mesh_windshield")
+
+[node name="WindshieldRear" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.0, 5.15)
+mesh = SubResource("mesh_windshield")
+
+[node name="Skirt" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+mesh = SubResource("mesh_skirt")
+
+[node name="BumperFront" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, -5.35)
+mesh = SubResource("mesh_bumper")
+
+[node name="BumperRear" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, 5.35)
+mesh = SubResource("mesh_bumper")
+
+[node name="Interior" type="Node3D" parent="."]
+
+[node name="Dashboard" type="MeshInstance3D" parent="Interior"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.35, -4.55)
+mesh = SubResource("mesh_dashboard")
+
+[node name="DriverSeat" type="Node3D" parent="Interior"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.75, 1.2, -4.0)
+
+[node name="SeatBase" type="MeshInstance3D" parent="Interior/DriverSeat"]
+mesh = SubResource("mesh_seat")
+
+[node name="SeatBack" type="MeshInstance3D" parent="Interior/DriverSeat"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.35, 0.28)
+mesh = SubResource("mesh_seatback")
+
+[node name="SteeringWheel" type="MeshInstance3D" parent="Interior"]
+transform = Transform3D(1, 0, 0, 0, 0.5, -0.866025, 0, 0.866025, 0.5, -0.75, 1.55, -4.3)
+mesh = SubResource("mesh_steerwheel")
+
+[node name="WheelFL" type="VehicleWheel3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.12, 0.65, -3.6)
+use_as_steering = true
+
+[node name="Mesh" type="MeshInstance3D" parent="WheelFL"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+rotation = Vector3(0, 0, 1.5707964)
+mesh = SubResource("mesh_wheel")
+
+[node name="WheelFR" type="VehicleWheel3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.12, 0.65, -3.6)
+use_as_steering = true
+
+[node name="Mesh" type="MeshInstance3D" parent="WheelFR"]
+rotation = Vector3(0, 0, 1.5707964)
+mesh = SubResource("mesh_wheel")
+
+[node name="WheelRL" type="VehicleWheel3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.12, 0.65, 2.6)
+use_as_traction = true
+
+[node name="Mesh" type="MeshInstance3D" parent="WheelRL"]
+rotation = Vector3(0, 0, 1.5707964)
+mesh = SubResource("mesh_wheel")
+
+[node name="WheelRR" type="VehicleWheel3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.12, 0.65, 2.6)
+use_as_traction = true
+
+[node name="Mesh" type="MeshInstance3D" parent="WheelRR"]
+rotation = Vector3(0, 0, 1.5707964)
+mesh = SubResource("mesh_wheel")
+
+[node name="WheelTL" type="VehicleWheel3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.12, 0.65, 3.7)
+
+[node name="Mesh" type="MeshInstance3D" parent="WheelTL"]
+rotation = Vector3(0, 0, 1.5707964)
+mesh = SubResource("mesh_wheel")
+
+[node name="WheelTR" type="VehicleWheel3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.12, 0.65, 3.7)
+
+[node name="Mesh" type="MeshInstance3D" parent="WheelTR"]
+rotation = Vector3(0, 0, 1.5707964)
+mesh = SubResource("mesh_wheel")

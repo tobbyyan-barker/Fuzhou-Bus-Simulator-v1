@@ -53,13 +53,15 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	if _bench_active:
 		_bench_frames += 1
-		_bench_elapsed += delta
-		if _bench_frames >= 600:
-			var fps: float = _bench_frames / maxf(_bench_elapsed, 0.001)
-			var frame_ms: float = 1000.0 * _bench_elapsed / _bench_frames
-			print("BENCH_RESULT avg_fps=%.1f frame_ms=%.2f frames=%d" % [fps, frame_ms, _bench_frames])
-			print("AC7_MEASURED frame_ms=%.2f (target<16.7)" % frame_ms)
-			get_tree().quit(0)
+		if _bench_frames > 120:
+			# 跳过前 120 帧着色器编译预热，测稳态性能
+			_bench_elapsed += delta
+			if _bench_frames >= 720:
+				var fps: float = 600.0 / maxf(_bench_elapsed, 0.001)
+				var frame_ms: float = 1000.0 * _bench_elapsed / 600.0
+				print("BENCH_RESULT avg_fps=%.1f frame_ms=%.2f frames=600 (warmup=120 skipped)" % [fps, frame_ms])
+				print("AC7_MEASURED frame_ms=%.2f (target<16.7)" % frame_ms)
+				get_tree().quit(0)
 	if _auto_quit_timer > 0.0:
 		_auto_quit_timer -= delta
 		if _auto_quit_timer <= 0.0:

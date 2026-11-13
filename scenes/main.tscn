@@ -1,0 +1,29 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://scripts/main.gd" id="1_main"]
+[ext_resource type="PackedScene" path="res://scenes/test_map.gushan.tscn" id="2_map"]
+[ext_resource type="PackedScene" path="res://assets/vehicles/bus_mt10.tscn" id="3_bus"]
+[ext_resource type="Script" path="res://scripts/camera/camera_manager.gd" id="4_camera"]
+[ext_resource type="PackedScene" path="res://scenes/ui/hud.tscn" id="5_hud"]
+[ext_resource type="Script" path="res://scripts/task/stop_task.gd" id="6_task"]
+
+[node name="Main" type="Node3D"]
+script = ExtResource("1_main")
+
+[node name="Map" parent="." instance=ExtResource("2_map")]
+
+[node name="Bus" parent="." instance=ExtResource("3_bus")]
+
+[node name="CameraManager" type="Node3D" parent="."]
+script = ExtResource("4_camera")
+
+[node name="CabCamera" type="Camera3D" parent="CameraManager"]
+fov = 75.0
+
+[node name="ChaseCamera" type="Camera3D" parent="CameraManager"]
+fov = 62.0
+
+[node name="HUD" parent="." instance=ExtResource("5_hud")]
+
+[node name="StopTask" type="Node" parent="."]
+script = ExtResource("6_task")

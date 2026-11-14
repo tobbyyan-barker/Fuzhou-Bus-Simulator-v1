@@ -12,10 +12,20 @@ var active: bool = false
 @export var brake_decel: float = 2.3
 
 
-func _physics_process(_delta: float) -> void:
+var _dbg_timer: float = 0.0
+
+
+func _physics_process(delta: float) -> void:
 	if not active or bus == null or route == null:
 		return
 	bus.use_external_control = true
+	_dbg_timer += delta
+	if _dbg_timer > 5.0:
+		_dbg_timer = 0.0
+		print("AUTO_DBG s=%.2f pos=(%.1f, %.1f) v=%.1f dist_stop=%.1f steer=%.2f mode=%s" % [
+				route.get_nearest_s(bus.global_position), bus.global_position.x, bus.global_position.z,
+				bus.get_speed_kmh(), _flat_dist(bus.global_position, route.get_stop_position()),
+				bus._steering, bus.gearbox.mode])
 
 	# ---- 纯追踪转向：瞄准前方 30 m 的路线点 ----
 	var aim := route.get_point_ahead(bus.global_position, 30.0)
@@ -44,3 +54,7 @@ func _physics_process(_delta: float) -> void:
 		brake = 0.15
 
 	bus.set_external_control(throttle, brake, steer_cmd)
+
+
+func _flat_dist(a: Vector3, b: Vector3) -> float:
+	return Vector2(a.x - b.x, a.z - b.z).length()

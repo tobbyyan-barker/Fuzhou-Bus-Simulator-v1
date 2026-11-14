@@ -23,10 +23,23 @@ func set_mode(new_mode: String) -> void:
 	mode_changed.emit(mode)
 
 
-## 由 BusController 每物理帧调用（空挡自动回 D 等安全逻辑）
-func update(throttle: float, speed_kmh: float) -> void:
+## 由 BusController 每物理帧调用（空挡自动回 D、前冲误挂 R 保护）
+## speed_kmh 为带符号前向速度：正=向前，负=倒车
+func update(throttle: float, signed_speed_kmh: float) -> void:
 	if mode == "N" and throttle > 0.1:
 		set_mode("D")
+	# 仅当客车仍在"向前"高速滑行时禁止保持 R 挡（误操作保护）
+	# 纯倒车为负速度，不触发——R 挡可持续倒车直到用户主动切回 D
+	if mode == "R" and signed_speed_kmh > _reverse_lock_kmh:
+		set_mode("N")
+
+
+## 锁挡阈值由宿主控制器注入（默认 8 km/h）
+var _reverse_lock_kmh: float = 8.0
+
+
+func set_reverse_lock_kmh(kmh: float) -> void:
+	_reverse_lock_kmh = maxf(kmh, 0.0)
 
 
 func get_display_text() -> String:

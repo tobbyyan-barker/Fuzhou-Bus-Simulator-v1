@@ -23,6 +23,17 @@ theme_override_colors/font_color = Color(1, 0.92, 0.4, 1)
 text = "任务：驶向鼓山测试场总站"
 horizontal_alignment = 1
 
+[node name="ReverseLabel" type="Label" parent="."]
+visible = false
+offset_left = 256.0
+offset_top = 58.0
+offset_right = 896.0
+offset_bottom = 102.0
+theme_override_font_sizes/font_size = 30
+theme_override_colors/font_color = Color(1, 0.28, 0.28, 1)
+text = "倒车中 — 后方畅通"
+horizontal_alignment = 1
+
 [node name="SpeedLabel" type="Label" parent="."]
 offset_left = 466.0
 offset_top = 548.0

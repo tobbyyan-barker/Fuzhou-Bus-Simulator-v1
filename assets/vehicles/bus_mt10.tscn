@@ -142,7 +142,7 @@ transform = Transform3D(1, 0, 0, 0, 0.5, -0.866025, 0, 0.866025, 0.5, -0.75, 1.5
 mesh = SubResource("mesh_steerwheel")
 
 [node name="WheelFL" type="VehicleWheel3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.12, 0.65, -3.6)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.20, 0.65, -3.6)
 use_as_steering = true
 
 [node name="Mesh" type="MeshInstance3D" parent="WheelFL"]
@@ -151,7 +151,7 @@ rotation = Vector3(0, 0, 1.5707964)
 mesh = SubResource("mesh_wheel")
 
 [node name="WheelFR" type="VehicleWheel3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.12, 0.65, -3.6)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.20, 0.65, -3.6)
 use_as_steering = true
 
 [node name="Mesh" type="MeshInstance3D" parent="WheelFR"]
@@ -159,7 +159,7 @@ rotation = Vector3(0, 0, 1.5707964)
 mesh = SubResource("mesh_wheel")
 
 [node name="WheelRL" type="VehicleWheel3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.12, 0.65, 2.6)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.20, 0.65, 2.6)
 use_as_traction = true
 
 [node name="Mesh" type="MeshInstance3D" parent="WheelRL"]
@@ -167,7 +167,7 @@ rotation = Vector3(0, 0, 1.5707964)
 mesh = SubResource("mesh_wheel")
 
 [node name="WheelRR" type="VehicleWheel3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.12, 0.65, 2.6)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.20, 0.65, 2.6)
 use_as_traction = true
 
 [node name="Mesh" type="MeshInstance3D" parent="WheelRR"]
@@ -175,14 +175,14 @@ rotation = Vector3(0, 0, 1.5707964)
 mesh = SubResource("mesh_wheel")
 
 [node name="WheelTL" type="VehicleWheel3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.12, 0.65, 3.7)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.20, 0.65, 3.7)
 
 [node name="Mesh" type="MeshInstance3D" parent="WheelTL"]
 rotation = Vector3(0, 0, 1.5707964)
 mesh = SubResource("mesh_wheel")
 
 [node name="WheelTR" type="VehicleWheel3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.12, 0.65, 3.7)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.20, 0.65, 3.7)
 
 [node name="Mesh" type="MeshInstance3D" parent="WheelTR"]
 rotation = Vector3(0, 0, 1.5707964)

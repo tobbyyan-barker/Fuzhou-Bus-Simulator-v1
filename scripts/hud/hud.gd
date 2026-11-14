@@ -13,8 +13,10 @@ var _displayed_speed_kmh: float = 0.0
 @onready var mileage_label: Label = $MileageLabel
 @onready var task_label: Label = $TaskLabel
 @onready var hint_label: Label = $HintLabel
+@onready var reverse_label: Label = $ReverseLabel
 
 const HINT := "W/S 油门·刹车   A/D 转向   C 切换视角   R 切倒挡   N 空挡   空格 手刹"
+const GEAR_COLOR_REVERSE := Color(1.0, 0.28, 0.28, 1.0)
 
 
 func _ready() -> void:
@@ -22,6 +24,7 @@ func _ready() -> void:
 	mileage_label.text = "里程 0.00 km"
 	speed_label.text = "0 km/h"
 	gear_label.text = "D 前进"
+	reverse_label.visible = false
 
 
 func _process(_delta: float) -> void:
@@ -34,6 +37,17 @@ func _process(_delta: float) -> void:
 		mileage_label.text = "里程 %.2f km" % route.get_mileage_km()
 	if stop_task != null:
 		task_label.text = stop_task.get_status_text()
+	# 倒挡强提示：挡位变红 + 顶部横幅（含倒车雷达距离）
+	if bus.gearbox != null and bus.gearbox.mode == "R":
+		gear_label.add_theme_color_override("font_color", GEAR_COLOR_REVERSE)
+		speed_label.add_theme_color_override("font_color", GEAR_COLOR_REVERSE)
+		var d: float = bus.get_reverse_obstacle_distance_m()
+		reverse_label.text = "倒车中 — 后方 %s" % ("畅通（12 m 内无障碍）" if d < 0.0 else "%.1f m" % d)
+		reverse_label.visible = true
+	else:
+		gear_label.remove_theme_color_override("font_color")
+		speed_label.remove_theme_color_override("font_color")
+		reverse_label.visible = false
 
 
 ## 供 AC6 自动化测试读取（与画面显示同源）

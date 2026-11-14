@@ -261,17 +261,28 @@ func _build_fixture(s: float, side: int) -> Dictionary:
 		lamp.position = box_center + fixture_basis * Vector3(0, lamp_y[state_key] - 4.55, 0.24)
 		add_child(lamp)
 
-	# 倒计时牌（billboard 常显）
+	# 倒计时牌：挂装在灯杆上的小面板，与三色灯同朝向（朝向来车）。
+	# 世界空间固定尺寸（数字约 0.4 m 高），随距离自然透视缩小，远处变小。
+	var panel := MeshInstance3D.new()
+	var pnl_m := BoxMesh.new()
+	pnl_m.size = Vector3(0.55, 0.75, 0.16)
+	var pnl_mat := StandardMaterial3D.new()
+	pnl_mat.albedo_color = Color(0.08, 0.08, 0.09)
+	pnl_mat.roughness = 0.4
+	pnl_m.material = pnl_mat
+	panel.mesh = pnl_m
+	panel.transform = Transform3D(fixture_basis, fixture_origin + Vector3.UP * 3.0)
+	add_child(panel)
+
 	var label := Label3D.new()
 	label.text = "0"
-	label.font_size = 96
-	label.pixel_size = 0.008
-	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	label.no_depth_test = true
-	label.fixed_size = true
+	label.font_size = 64
+	label.pixel_size = 0.006
 	label.modulate = Color(1, 1, 1)
-	label.position = box_center + fixture_basis * Vector3(0, -1.3, 0.15)
-	add_child(label)
+	label.outline_size = 10
+	label.outline_modulate = Color(0, 0, 0, 0.85)
+	label.position = Vector3(0, 0, 0.09)
+	panel.add_child(label)
 
 	# 停车线（白色横条，跨对应车道；视觉）
 	var line_s: float = s - STOP_LINE_MARGIN * side

@@ -83,14 +83,22 @@ func _run_suite() -> void:
 	_check("AC6", absf(hud_v - real_v) < 2.0,
 			"HUD %.1f vs 实测 %.1f km/h（偏差要求 < 2）" % [hud_v, real_v])
 
-	# ---- AC4（逻辑部分）：视角切换 ----
-	var cab_first: bool = cam_mgr.is_cab_active()
-	cam_mgr.toggle()
-	await _sim(2)
-	var switched: bool = cam_mgr.is_cab_active() != cab_first
-	cam_mgr.toggle()
-	await _sim(2)
-	_check("AC4-logic", switched, "视角切换逻辑正常（视觉确认见 GUI 测试）")
+	# ---- AC4（逻辑部分）：视角循环切换（C/Q：跟车→车顶→左侧→右侧→驾驶舱→回跟车） ----
+	var view_start: int = cam_mgr.get_view()
+	var distinct: bool = true
+	var saw_cab: bool = false
+	var prev: int = view_start
+	for i in cam_mgr.VIEW_COUNT:
+		cam_mgr.cycle_view()
+		await _sim(2)
+		if cam_mgr.get_view() == prev:
+			distinct = false
+		prev = cam_mgr.get_view()
+		if cam_mgr.is_cab_active():
+			saw_cab = true
+	var loop_closed: bool = cam_mgr.get_view() == view_start
+	_check("AC4-logic", distinct and saw_cab and loop_closed,
+			"C/Q 五视角循环正常（跟车→车顶→左侧→右侧→驾驶舱，5 键回环；视觉确认见 GUI 测试）")
 
 	# ---- AC5：真实驾驶进站 → 停稳 3 s → stop_completed ----
 	_teleport(route.get_total_length() - 120.0, 140.0)  # 清空 140 m 进站通道

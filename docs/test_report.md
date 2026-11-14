@@ -184,3 +184,34 @@ AC7_MEASURED frame_ms=16.69 (target<16.7)
 ```
 
 **✅ PASS**。注：本轮首测曾得 28.09 ms，排查发现是**用户上次试玩遗留的游戏窗口进程**在后台抢占 GPU（非渲染内容劣化），关闭后复测恢复 16.69 ms。测试基准跑性能前应确认无其他 3D 进程。
+
+## 八、2026-11-14（夜）v0.1.6 五视角循环回归
+
+新增：C/Q 键五视角循环（跟车→车顶→左侧→右侧→驾驶舱→回环）；车顶/左右视角刚性绑定、代码生成相机、参数 Inspector 可调；HUD 提示更新。测试适配：AC4-logic 循环断言、feel_check 拆出 FEEL_VIEW_CYCLE 并扩展 FEEL_CAB_CAM 几何校验。
+
+### feel_check 视角断言（headless 真实按键事件）
+
+```
+FEEL_VIEW_CYCLE: C 绑定=true，Q 绑定=true，5 键顺序（车顶→左→右→驾驶舱→回跟车）=true，Q 切回跟车=true
+FEEL_CAB_CAM: 驾驶舱切入=true，行驶中跟随误差 0.066 m / 朝向误差 0.0000，FOV=75.0 接线=true，
+切换速度扰动 0.00 m/s，车顶高出车身 3.6 m，左/右侧分居两侧=true/true
+```
+
+（刹车/转向/倒挡/手刹/喇叭/交通/红绿灯等其余 12 项手感断言同步复测通过。）
+
+### AC 全量回归（连跑 3 次，退出码均 0）
+
+```
+[AC1-load] PASS   [AC2] PASS — 38.6 km/h   [AC3] PASS — 60.2 km/h 全制动 20.7 m，直立 1.00
+[AC6] PASS — 偏差 0.2 km/h   [AC4-logic] PASS — C/Q 五视角循环正常   [AC5] PASS — 2.0 m，蠕行 0 段
+TEST_SUMMARY total=6 pass=6 fail=0
+```
+
+### AC7 性能（新增 3 个相机后）
+
+```
+BENCH_RESULT avg_fps=60.0 frame_ms=16.67 frames=600 (warmup=120 skipped)
+AC7_MEASURED frame_ms=16.67 (target<16.7)
+```
+
+**✅ PASS**。

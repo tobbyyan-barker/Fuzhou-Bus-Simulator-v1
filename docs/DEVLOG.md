@@ -137,3 +137,20 @@
 - 验证：AC 套件连跑 3 次全部 6/6 通过（AC5 稳定 2.0 m，蠕行 0 段）。
 
 **回归结果**：AC 6/6 ×3（确定性）；feel_check 14/14（FEEL_CAB_CAM 新增）；GUI 启动 + AC7 16.67 ms ✅；GUI 自动驾驶 334.1 s 完整闭环（真实 TTS、红灯等待）。
+
+## 2026-11-14（深夜）— v0.1.6 五视角循环（C/Q：跟车→车顶→左→右→驾驶舱）
+
+### 视角功能（用户需求驱动）
+
+- 需求：C 键第 1 次按 = 第三人称跟车、第 2 次 = 车顶、第 3 次 = 左侧、第 4 次 = 右侧、第 5 次 = 第一人称驾驶舱，再按回跟车。Q 键沿用同一循环（v0.1.5 双键设计保持）。
+- 实现：
+  - `camera_manager.gd` 重构为状态机：`VIEW_CHASE/ROOF/LEFT/RIGHT/CAB` 五个常量 + `view` 索引，`cycle_view()` 取模前进，`set_view()/get_view()` 供测试直拨。
+  - 车顶/左侧/右侧三个新相机**代码生成**（`_create_cam`，场景 main.tscn 零改动）；每物理帧**刚性绑定**（`bus_t * offset`）——车顶注视车前方路面形成俯角，左右分居车身两侧注视车身中部，随车俯仰侧倾（如同固定在车上的机位）。
+  - 参数 Inspector 可调（CameraManager 节点 @export）：`roof_offset / roof_look_ahead / roof_look_height / roof_fov_deg`、`side_distance / side_height / side_look_height / side_fov_deg`，每帧同步实时生效。
+  - 切换仍只改 `Camera3D.current`，物理零扰动（实测 0.00 m/s）。
+- 测试适配：
+  - `test_mvp.gd` AC4-logic 改为循环断言：5 次 cycle 逐次视角不同、必经驾驶舱、第 5 次回环起点。
+  - `feel_check.gd` 第 12 项拆为 `FEEL_VIEW_CYCLE`（C/Q 双键绑定、真实 C 键事件 5 按顺序校验、Q 键回跟车）+ `FEEL_CAB_CAM`（原刚性跟随/FOV/零扰动断言保留，新增车顶高出车身 3.6 m、左右相机分居两侧几何校验）。旧 `toggle()` API 移除，调用方全部迁移。
+- HUD 提示更新为 "C/Q 视角循环（跟车·车顶·左·右·驾驶舱）"。
+
+**回归结果**：AC 6/6 ×3（连跑三次全绿）；feel_check 14 项全过（FEEL_VIEW_CYCLE 顺序/回环 true，FEEL_CAB_CAM 跟随误差 0.066 m、扰动 0.00 m/s）；GUI bench 60.0 FPS / 16.67 ms；GUI 自动驾驶全路线闭环。

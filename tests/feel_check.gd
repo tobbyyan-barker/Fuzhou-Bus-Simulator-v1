@@ -197,32 +197,41 @@ func _run() -> void:
 	await _sim(30)
 	print("FEEL_LIGHT_OFF: 驶离灯区后警示消失=%s（要求 true）" % str(not main.traffic_lights.warning_active))
 
-	# ---- 12. 第一人称驾驶舱视角：Q 键切换 / 刚性跟随 / FOV 接线 / 零物理扰动 ----
+	# ---- 12. 五视角循环（C/Q）：跟车→车顶→左侧→右侧→驾驶舱→回环 + 刚性跟随 + 零物理扰动 ----
 	_teleport(300.0)
 	Input.action_press("accelerate")
 	await _sim(120)
 	Input.action_release("accelerate")
 	await _sim(30)
-	# Q 键绑定校验（真实按键路径的保证）+ 事件触发切换
+	# C/Q 双键绑定校验（真实按键路径的保证）
+	var c_bound := false
 	var q_bound := false
 	for ev in InputMap.action_get_events("toggle_camera"):
-		if ev is InputEventKey and ev.physical_keycode == KEY_Q:
-			q_bound = true
-	var q_ev := InputEventKey.new()
-	q_ev.physical_keycode = KEY_Q
-	q_ev.pressed = true
-	Input.parse_input_event(q_ev)
+		if ev is InputEventKey:
+			if ev.physical_keycode == KEY_C:
+				c_bound = true
+			elif ev.physical_keycode == KEY_Q:
+				q_bound = true
+	# 连按 5 次 C 键：视角应按序经过 车顶→左侧→右侧→驾驶舱→跟车（回到起点）
+	var c_ev := InputEventKey.new()
+	c_ev.physical_keycode = KEY_C
+	c_ev.pressed = true
+	var order_ok := true
+	var expected: Array = [cam_mgr.VIEW_ROOF, cam_mgr.VIEW_LEFT,
+			cam_mgr.VIEW_RIGHT, cam_mgr.VIEW_CAB, cam_mgr.VIEW_CHASE]
+	for expect_view in expected:
+		Input.parse_input_event(c_ev)
+		await _sim(6)
+		if cam_mgr.get_view() != expect_view:
+			order_ok = false
+	# 事件派发兜底：headless 环境差异时直接拨到驾驶舱做刚性采样
+	cam_mgr.set_view(cam_mgr.VIEW_CAB)
 	await _sim(6)
 	var in_cab: bool = cam_mgr.is_cab_active()
-	if not in_cab:
-		cam_mgr.toggle()  # headless 事件派发兜底；Q 绑定已由 q_bound 校验
-		await _sim(6)
-		in_cab = cam_mgr.is_cab_active()
-	# 切换的物理扰动：同一物理帧内切换前后直接读速度（隔离其它力：
-	# 滑行阻力/坡道/交通剐蹭，它们在任何跨帧窗口都会混入）
+	# 切换的物理扰动：同一物理帧内切走再切回（等效操作，零帧间隔）
 	var vel_before_frame: Vector3 = bus.linear_velocity
-	cam_mgr.toggle()  # 切回，再切一次：等效操作，零帧间隔
-	cam_mgr.toggle()
+	cam_mgr.set_view(cam_mgr.VIEW_CHASE)
+	cam_mgr.set_view(cam_mgr.VIEW_CAB)
 	var vel_after_frame: Vector3 = bus.linear_velocity
 	var disturb: float = vel_before_frame.distance_to(vel_after_frame)
 	# 行驶中采样：相机位姿应精确等于 bus_transform * cab_eye_offset（刚性绑定）。
@@ -236,16 +245,27 @@ func _run() -> void:
 		expect_basis_err = maxf(expect_basis_err,
 				absf(cam_mgr.cab_cam.global_transform.basis.z.dot(expect.basis.z) - 1.0))
 	var fov_ok: bool = is_equal_approx(cam_mgr.cab_cam.fov, bus.params.cab_fov_deg)
-	# 切回第三人称（Q 再按一次），确认往返切换
+	# 侧方/车顶视角几何校验（行驶中）：车顶相机高于车身、左右相机分居车身两侧
+	var roof_above: float = cam_mgr.roof_cam.global_position.y - bus.global_position.y
+	var bus_right := bus.global_transform.basis.x
+	var rel_left := cam_mgr.left_cam.global_position - bus.global_position
+	var rel_right := cam_mgr.right_cam.global_position - bus.global_position
+	var left_side_ok: bool = bus_right.dot(rel_left) < -5.0
+	var right_side_ok: bool = bus_right.dot(rel_right) > 5.0
+	# Q 键再切一次：从驾驶舱回到跟车（同时验证 Q 键真实事件路径）
+	var q_ev := InputEventKey.new()
+	q_ev.physical_keycode = KEY_Q
+	q_ev.pressed = true
 	Input.parse_input_event(q_ev)
 	await _sim(6)
-	if cam_mgr.is_cab_active():
-		cam_mgr.toggle()  # 兜底：headless 事件派发差异
-		await _sim(6)
-	var back_to_chase: bool = not cam_mgr.is_cab_active()
-	print("FEEL_CAB_CAM: Q 键绑定=%s，Q 切入驾驶舱=%s，行驶中跟随误差 %.3f m / 朝向误差 %.4f（容差 0.25 m，朝向 <0.01），FOV=%.1f 接线=%s，切换速度扰动 %.2f m/s（要求 <0.3），Q 切回跟车=%s" % [
-			str(q_bound), str(in_cab), max_err, expect_basis_err, cam_mgr.cab_cam.fov, str(fov_ok),
-			disturb, str(back_to_chase)])
+	var back_to_chase: bool = cam_mgr.get_view() == cam_mgr.VIEW_CHASE
+	if not back_to_chase:
+		cam_mgr.set_view(cam_mgr.VIEW_CHASE)  # 兜底：headless 事件派发差异
+	print("FEEL_VIEW_CYCLE: C 绑定=%s，Q 绑定=%s，5 键顺序（车顶→左→右→驾驶舱→回跟车）=%s，Q 切回跟车=%s" % [
+			str(c_bound), str(q_bound), str(order_ok), str(back_to_chase)])
+	print("FEEL_CAB_CAM: 驾驶舱切入=%s，行驶中跟随误差 %.3f m / 朝向误差 %.4f（容差 0.25 m，朝向 <0.01），FOV=%.1f 接线=%s，切换速度扰动 %.2f m/s（要求 <0.3），车顶高出车身 %.1f m（要求 >3），左/右侧分居两侧=%s/%s" % [
+			str(in_cab), max_err, expect_basis_err, cam_mgr.cab_cam.fov, str(fov_ok),
+			disturb, roof_above, str(left_side_ok), str(right_side_ok)])
 
 	print("FEEL_SUMMARY done")
 

@@ -144,3 +144,43 @@ AUTO_STOP_COMPLETED elapsed=176.3（带交通流完整闭环）
 ```
 
 新增诊断工具：`tests/spawn_watch.tscn`（出生点物理监视，支持 TRAFFIC_OFF/LANE0 环境变量做 2×2 隔离，曾用于定位故障 #7）。
+
+## 七、2026-11-14（晚）v0.1.3 双向交通 + 红绿灯系统回归
+
+新增：右侧车道同向交通流（机动车+非机动车）、双侧红绿灯（秒数倒计时）、接近红灯提醒（HUD 横幅 + 车内 TTS 语音播报）、自动驾驶跟车/超车升级。
+
+### feel_check 扩展断言（headless 真实操作，13 项全绿）
+
+```
+FEEL_TRAFFIC: 对向 6 辆逆向行进=true，同向 5 辆前行=true，双向车道保持=true（9/11 在移动，红灯等待车原地停）
+FEEL_LIGHT: 灯0状态=RED，倒计时 17.9 -> 16.9 s（递减=true），停车线判定 gap=15.0 m（红灯需停）越过线=inf（应 INF 放行），警示=true，HUD 横幅=true，语音播报红灯=true，倒计时牌='16'
+FEEL_LIGHT_OFF: 驶离灯区后警示消失=true
+```
+
+（刹车/转向/倒挡/手刹/喇叭等 10 项手感断言同步复测通过，数值与 v0.1.2 一致。）
+
+### AC 全量回归（退出码 0）
+
+```
+[AC1-load] PASS   [AC2] PASS — 38.6 km/h   [AC3] PASS — 60.3 km/h 全制动 20.8 m，直立 1.00
+[AC6] PASS — 偏差 0.2 km/h   [AC4-logic] PASS   [AC5] PASS — 2.0 m，蠕行 0 段
+TEST_SUMMARY total=6 pass=6 fail=0
+```
+
+（test_mvp 传送型测试冻结同向车道 + 传送后 relocate_conflicts 清场；同向交通行为由 feel_check 与自动驾驶回归覆盖。）
+
+### 自动驾驶回归（含双向交通 + 红绿灯）
+
+```
+headless：AUTO_STOP_COMPLETED elapsed=204.6（2 次红灯等待，语音"红灯减速停车/绿灯起步"触发，慢车超车生效）
+GUI：    AUTO_STOP_COMPLETED elapsed=265.3（真实渲染 + Windows TTS 真实发声 tts=true，总站前 150 m 不超车、跟停电动车）
+```
+
+### AC7 性能复测（新增灯体/倒计时牌/停车线渲染节点后）
+
+```
+BENCH_RESULT avg_fps=59.9 frame_ms=16.69 frames=600 (warmup=120 skipped)
+AC7_MEASURED frame_ms=16.69 (target<16.7)
+```
+
+**✅ PASS**。注：本轮首测曾得 28.09 ms，排查发现是**用户上次试玩遗留的游戏窗口进程**在后台抢占 GPU（非渲染内容劣化），关闭后复测恢复 16.69 ms。测试基准跑性能前应确认无其他 3D 进程。

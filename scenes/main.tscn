@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene load_steps=11 format=3]
 
 [ext_resource type="Script" path="res://scripts/main.gd" id="1_main"]
 [ext_resource type="PackedScene" path="res://scenes/test_map.gushan.tscn" id="2_map"]
@@ -8,6 +8,8 @@
 [ext_resource type="Script" path="res://scripts/task/stop_task.gd" id="6_task"]
 [ext_resource type="Script" path="res://scripts/audio/horn.gd" id="7_horn"]
 [ext_resource type="Script" path="res://scripts/traffic/traffic_manager.gd" id="8_traffic"]
+[ext_resource type="Script" path="res://scripts/traffic/traffic_light_manager.gd" id="9_lights"]
+[ext_resource type="Script" path="res://scripts/audio/voice_announcer.gd" id="10_voice"]
 
 [node name="Main" type="Node3D"]
 script = ExtResource("1_main")
@@ -18,6 +20,12 @@ script = ExtResource("1_main")
 
 [node name="Traffic" type="Node3D" parent="."]
 script = ExtResource("8_traffic")
+
+[node name="TrafficLights" type="Node3D" parent="."]
+script = ExtResource("9_lights")
+
+[node name="Voice" type="Node" parent="."]
+script = ExtResource("10_voice")
 
 [node name="Horn" type="Node" parent="."]
 script = ExtResource("7_horn")

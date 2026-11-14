@@ -34,6 +34,17 @@ theme_override_colors/font_color = Color(1, 0.28, 0.28, 1)
 text = "倒车中 — 后方畅通"
 horizontal_alignment = 1
 
+[node name="SignalLabel" type="Label" parent="."]
+visible = false
+offset_left = 256.0
+offset_top = 108.0
+offset_right = 896.0
+offset_bottom = 152.0
+theme_override_font_sizes/font_size = 30
+theme_override_colors/font_color = Color(1, 0.25, 0.25, 1)
+text = "⚠ 前方红灯 · 请停车"
+horizontal_alignment = 1
+
 [node name="HandbrakeLabel" type="Label" parent="."]
 visible = false
 offset_left = 1052.0

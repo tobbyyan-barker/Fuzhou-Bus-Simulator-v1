@@ -5,6 +5,7 @@ extends CanvasLayer
 @export var bus: BusController
 @export var route: RouteManager
 @export var stop_task: StopTask
+@export var lights: TrafficLightManager
 
 var _displayed_speed_kmh: float = 0.0
 
@@ -15,6 +16,7 @@ var _displayed_speed_kmh: float = 0.0
 @onready var hint_label: Label = $HintLabel
 @onready var reverse_label: Label = $ReverseLabel
 @onready var handbrake_label: Label = $HandbrakeLabel
+@onready var signal_label: Label = $SignalLabel
 
 const HINT := "W/S 油门·刹车   A/D 转向   C 视角   R 倒挡   N 空挡   H 喇叭   空格 手刹（紧急停车）"
 const GEAR_COLOR_REVERSE := Color(1.0, 0.28, 0.28, 1.0)
@@ -51,6 +53,12 @@ func _process(_delta: float) -> void:
 		reverse_label.visible = false
 	# 手刹紧急停车：右上角红色感叹号
 	handbrake_label.visible = bus.is_handbraking()
+	# 红绿灯警示横幅（红灯/黄灯接近时）
+	if lights != null and lights.warning_active:
+		signal_label.text = lights.warning_text
+		signal_label.visible = true
+	else:
+		signal_label.visible = false
 
 
 ## 供 AC6 自动化测试读取（与画面显示同源）

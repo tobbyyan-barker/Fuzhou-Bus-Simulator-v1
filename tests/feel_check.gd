@@ -142,27 +142,60 @@ func _run() -> void:
 	var horn_off: bool = not main.horn.is_playing()
 	print("FEEL_HORN: 按下播放=%s（要求 true），松开停止=%s（要求 true）" % [str(horn_on), str(horn_off)])
 
-	# ---- 8. 对向车道交通流：数量/逆向运动/车道保持 ----
+	# ---- 8. 双向车道交通流：对向逆向行进 / 同向前行 / 车道保持 ----
 	var tv: Array = main.traffic.get_vehicles()
 	var s_before: Array[float] = []
 	for v in tv:
 		s_before.append(v.s)
 	await _sim(120)  # 2 s
-	var all_reversed: bool = true
+	var oncoming_cnt := 0
+	var same_cnt := 0
+	var oncoming_ok: bool = true  # 对向车不得前行
+	var same_ok: bool = true      # 同向车不得倒退（红灯等待允许原地停）
 	var lane_ok: bool = true
+	var moved_cnt := 0
 	for i in tv.size():
 		var v: Dictionary = tv[i]
-		if v.s >= s_before[i]:
-			all_reversed = false
+		var lane_off: float = TrafficManager.SAME_LANE_OFFSET if v.dir > 0 else TrafficManager.LANE_OFFSET
+		if v.dir > 0:
+			same_cnt += 1
+			if v.s < s_before[i] - 0.05:
+				same_ok = false
+		else:
+			oncoming_cnt += 1
+			if v.s > s_before[i] + 0.05:
+				oncoming_ok = false
+		if absf(v.s - s_before[i]) > 0.1:
+			moved_cnt += 1
 		var t: Transform3D = route.get_transform_at(v.s)
 		var lat: float = (v.node.global_position - t.origin).dot(t.basis.x)
-		if absf(lat - TrafficManager.LANE_OFFSET) > 0.6:
+		if absf(lat - lane_off) > 0.6:
 			lane_ok = false
-	var kinds: Array[String] = []
-	for v in tv:
-		kinds.append(v.kind)
-	print("FEEL_TRAFFIC: %d 辆对向来车（%s），2 s 内全部逆向行进=%s，车道偏移保持=%s" % [
-			tv.size(), "、".join(kinds), str(all_reversed), str(lane_ok)])
+	print("FEEL_TRAFFIC: 对向 %d 辆逆向行进=%s，同向 %d 辆前行=%s，双向车道保持=%s（%d/%d 在移动，红灯等待车原地停）" % [
+			oncoming_cnt, str(oncoming_ok), same_cnt, str(same_ok), str(lane_ok), moved_cnt, tv.size()])
+
+	# ---- 9. 红绿灯：状态机 / 停车线判定 / 警示横幅 + 车内语音播报 / 倒计时 ----
+	main.traffic_lights.time_start = 30.0  # 灯0（500 m）进入红灯，剩约 18 s
+	await _sim(6)
+	var st0: String = main.traffic_lights.get_state(0)
+	var rem_before: float = main.traffic_lights.get_remaining(0)
+	var line_gap: float = main.traffic_lights.get_stop_line_gap(480.0, 1)
+	var line_past: float = main.traffic_lights.get_stop_line_gap(497.0, 1)
+	await _sim(60)  # 1 s：倒计时递减观察
+	var rem_after: float = main.traffic_lights.get_remaining(0)
+	_teleport(450.0)  # 距停车线（495 m）45 m < 60 m 警示距离
+	await _sim(60)
+	var warn: bool = main.traffic_lights.warning_active
+	var hud_shown: bool = hud.signal_label.visible
+	var voice_red: bool = main.voice.has_announced_containing("红灯")
+	var cd_text: String = main.traffic_lights.get_countdown_text(0, 1)
+	print("FEEL_LIGHT: 灯0状态=%s（应为 RED），倒计时 %.1f -> %.1f s（递减=%s），停车线判定 gap=%.1f m（红灯需停）越过线=%s（应 INF 放行），警示=%s，HUD 横幅=%s，语音播报红灯=%s，倒计时牌='%s'" % [
+			st0, rem_before, rem_after, str(rem_after < rem_before), line_gap,
+			str(line_past), str(warn), str(hud_shown), str(voice_red), cd_text])
+	# 驶离后警示应消失
+	_teleport(100.0)
+	await _sim(30)
+	print("FEEL_LIGHT_OFF: 驶离灯区后警示消失=%s（要求 true）" % str(not main.traffic_lights.warning_active))
 
 	print("FEEL_SUMMARY done")
 
@@ -192,6 +225,8 @@ func _teleport(s: float) -> void:
 	Input.action_release("steer_left")
 	Input.action_release("steer_right")
 	bus.global_transform = route.get_transform_at(s, RouteManager.RIGHT_LANE_OFFSET)
+	# 传送清场：移走附近交通车（防止重叠炸飞）
+	main.traffic.relocate_conflicts(bus.global_position, 30.0)
 	bus.linear_velocity = Vector3.ZERO
 	bus.angular_velocity = Vector3.ZERO
 	bus.sleeping = false

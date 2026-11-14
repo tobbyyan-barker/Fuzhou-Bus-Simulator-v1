@@ -33,6 +33,8 @@ func _run_suite() -> void:
 	hud = main.hud
 	cam_mgr = main.cam_mgr
 	stop_task = main.stop_task
+	# 传送型测试冻结同向车道（传送会人为制造重叠；同向交通行为由 feel_check/自动驾驶回归覆盖）
+	main.traffic.same_lane_frozen = true
 	_check("AC1-load", bus != null and route != null and stop_task != null,
 			"主场景/客车/路线/任务全部实例化成功")
 
@@ -146,6 +148,8 @@ func _teleport(s: float) -> void:
 	Input.action_release("accelerate")
 	Input.action_release("brake")
 	bus.global_transform = route.get_transform_at(s, RouteManager.RIGHT_LANE_OFFSET)
+	# 传送清场：移走附近交通车（防止重叠炸飞）
+	main.traffic.relocate_conflicts(bus.global_position, 30.0)
 	bus.linear_velocity = Vector3.ZERO
 	bus.angular_velocity = Vector3.ZERO
 	bus.sleeping = false

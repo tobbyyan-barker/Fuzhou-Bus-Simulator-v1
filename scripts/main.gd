@@ -11,6 +11,8 @@ var hud: Hud
 var stop_task: StopTask
 var autopilot: Autopilot
 var traffic: TrafficManager
+var traffic_lights: TrafficLightManager
+var voice: VoiceAnnouncer
 var horn: Horn
 
 var _bench_active: bool = false
@@ -26,18 +28,25 @@ func _ready() -> void:
 	hud = $HUD
 	stop_task = $StopTask
 	traffic = $Traffic
+	traffic_lights = $TrafficLights
+	voice = $Voice
 	horn = $Horn
-	traffic.setup(map)
+	traffic_lights.setup(map)
+	traffic.setup(map, traffic_lights)
 
 	_ensure_input_map()
 
 	bus.global_transform = map.get_spawn_transform()
 	map.bus = bus
+	traffic.bus = bus
+	traffic_lights.bus = bus
+	traffic_lights.announce_requested.connect(voice.speak)
 	cam_mgr.bus = bus
 	cam_mgr.snap_chase()
 	hud.bus = bus
 	hud.route = map
 	hud.stop_task = stop_task
+	hud.lights = traffic_lights
 	stop_task.bus = bus
 	stop_task.stop_position = map.get_stop_position()
 	stop_task.stop_completed.connect(_on_stop_completed)
@@ -47,6 +56,8 @@ func _ready() -> void:
 		autopilot = Autopilot.new()
 		autopilot.bus = bus
 		autopilot.route = map
+		autopilot.lights = traffic_lights
+		autopilot.traffic = traffic
 		add_child(autopilot)
 		autopilot.active = true
 		print("AUTOPILOT_ON")

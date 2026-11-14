@@ -34,6 +34,18 @@ theme_override_colors/font_color = Color(1, 0.28, 0.28, 1)
 text = "倒车中 — 后方畅通"
 horizontal_alignment = 1
 
+[node name="HandbrakeLabel" type="Label" parent="."]
+visible = false
+offset_left = 1052.0
+offset_top = 40.0
+offset_right = 1132.0
+offset_bottom = 120.0
+theme_override_font_sizes/font_size = 64
+theme_override_colors/font_color = Color(1, 0.15, 0.15, 1)
+text = "!"
+horizontal_alignment = 1
+vertical_alignment = 1
+
 [node name="SpeedLabel" type="Label" parent="."]
 offset_left = 466.0
 offset_top = 548.0

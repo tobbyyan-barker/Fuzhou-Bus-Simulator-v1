@@ -49,6 +49,10 @@ gear_n={
 "deadzone": 0.2,
 "events": [Object(InputEventKey,"physical_keycode":78)]
 }
+horn={
+"deadzone": 0.2,
+"events": [Object(InputEventKey,"physical_keycode":72)]
+}
 
 [physics]
 

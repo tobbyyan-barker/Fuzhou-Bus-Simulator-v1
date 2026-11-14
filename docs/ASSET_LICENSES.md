@@ -10,5 +10,7 @@
 | 灯光/天空 | ProceduralSkyMaterial + DirectionalLight3D（引擎内置） | Godot 引擎 MIT | — |
 | 车辆品牌 | 虚构品牌"闽通 MT-10" | 自建 | 规避真实商标（宇通/金龙等在获授权前禁用） |
 | 地图 | 虚构"鼓山测试场"，程序化生成 | 自建 | 未使用 OpenStreetMap 或任何真实地理数据 |
+| 喇叭音效 | 运行时合成的 16-bit PCM（AudioStreamWAV，350+440 Hz 双音合成，`scripts/audio/horn.gd`） | 自建，无许可负担 | 未引入任何音频文件 |
+| 对向车道交通车辆（轿车/货车/电动自行车） | Primitive Mesh 参数化拼装（`scripts/traffic/traffic_manager.gd`） | 自建，无许可负担 | 无外部模型引入 |
 
 **累计外部素材引入数：0。**

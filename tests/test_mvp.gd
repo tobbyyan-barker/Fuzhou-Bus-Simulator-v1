@@ -145,7 +145,7 @@ func _sim(frames: int) -> void:
 func _teleport(s: float) -> void:
 	Input.action_release("accelerate")
 	Input.action_release("brake")
-	bus.global_transform = route.get_transform_at(s)
+	bus.global_transform = route.get_transform_at(s, RouteManager.RIGHT_LANE_OFFSET)
 	bus.linear_velocity = Vector3.ZERO
 	bus.angular_velocity = Vector3.ZERO
 	bus.sleeping = false

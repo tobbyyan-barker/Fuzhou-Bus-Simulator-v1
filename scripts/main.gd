@@ -10,6 +10,8 @@ var cam_mgr: CameraManager
 var hud: Hud
 var stop_task: StopTask
 var autopilot: Autopilot
+var traffic: TrafficManager
+var horn: Horn
 
 var _bench_active: bool = false
 var _bench_frames: int = 0
@@ -23,6 +25,9 @@ func _ready() -> void:
 	cam_mgr = $CameraManager
 	hud = $HUD
 	stop_task = $StopTask
+	traffic = $Traffic
+	horn = $Horn
+	traffic.setup(map)
 
 	_ensure_input_map()
 
@@ -86,6 +91,7 @@ func _ensure_input_map() -> void:
 		"handbrake": KEY_SPACE,
 		"gear_r": KEY_R,
 		"gear_n": KEY_N,
+		"horn": KEY_H,
 	}
 	for action in key_actions:
 		if not InputMap.has_action(action):

@@ -116,6 +116,54 @@ func _run() -> void:
 	print("FEEL_REVERSE_LOCK: %.1f km/h 时按 R -> 当前挡位='%s'（应为 N 或 D，不得为 R）" % [
 			high_speed, bus.gearbox.mode])
 
+	# ---- 6. 手刹紧急停车：速度立即清零 + HUD 右上角红色感叹号 ----
+	bus.gearbox.set_mode("D")
+	_teleport(120.0)
+	Input.action_press("accelerate")
+	await _sim(180)
+	Input.action_release("accelerate")
+	var v_pre_hb: float = bus.get_speed_kmh()
+	Input.action_press("handbrake")
+	await _sim(6)  # 0.1 s
+	var v_post_hb: float = bus.get_speed_kmh()
+	var hb_shown: bool = hud.handbrake_label.visible
+	Input.action_release("handbrake")
+	await _sim(6)
+	var hb_hidden: bool = not hud.handbrake_label.visible
+	print("FEEL_HANDBRAKE: %.1f km/h 拉手刹 0.1 s -> %.2f km/h（要求 <1），感叹号显示=%s 释放后隐藏=%s" % [
+			v_pre_hb, v_post_hb, str(hb_shown), str(hb_hidden)])
+
+	# ---- 7. 喇叭：按住持续播放，松开停止 ----
+	Input.action_press("horn")
+	await _sim(6)
+	var horn_on: bool = main.horn.is_playing()
+	Input.action_release("horn")
+	await _sim(6)
+	var horn_off: bool = not main.horn.is_playing()
+	print("FEEL_HORN: 按下播放=%s（要求 true），松开停止=%s（要求 true）" % [str(horn_on), str(horn_off)])
+
+	# ---- 8. 对向车道交通流：数量/逆向运动/车道保持 ----
+	var tv: Array = main.traffic.get_vehicles()
+	var s_before: Array[float] = []
+	for v in tv:
+		s_before.append(v.s)
+	await _sim(120)  # 2 s
+	var all_reversed: bool = true
+	var lane_ok: bool = true
+	for i in tv.size():
+		var v: Dictionary = tv[i]
+		if v.s >= s_before[i]:
+			all_reversed = false
+		var t: Transform3D = route.get_transform_at(v.s)
+		var lat: float = (v.node.global_position - t.origin).dot(t.basis.x)
+		if absf(lat - TrafficManager.LANE_OFFSET) > 0.6:
+			lane_ok = false
+	var kinds: Array[String] = []
+	for v in tv:
+		kinds.append(v.kind)
+	print("FEEL_TRAFFIC: %d 辆对向来车（%s），2 s 内全部逆向行进=%s，车道偏移保持=%s" % [
+			tv.size(), "、".join(kinds), str(all_reversed), str(lane_ok)])
+
 	print("FEEL_SUMMARY done")
 
 
@@ -143,7 +191,7 @@ func _teleport(s: float) -> void:
 	Input.action_release("brake")
 	Input.action_release("steer_left")
 	Input.action_release("steer_right")
-	bus.global_transform = route.get_transform_at(s)
+	bus.global_transform = route.get_transform_at(s, RouteManager.RIGHT_LANE_OFFSET)
 	bus.linear_velocity = Vector3.ZERO
 	bus.angular_velocity = Vector3.ZERO
 	bus.sleeping = false

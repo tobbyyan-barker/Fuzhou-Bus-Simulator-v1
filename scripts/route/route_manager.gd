@@ -74,14 +74,18 @@ func _build_route() -> void:
 # ---------------- 公共 API ----------------
 
 func get_spawn_transform() -> Transform3D:
-	return get_transform_at(1.5)
+	return get_transform_at(1.5, RIGHT_LANE_OFFSET)
 
 
 func get_stop_position() -> Vector3:
 	return waypoints[waypoints.size() - 1]
 
 
-func get_transform_at(s: float) -> Transform3D:
+## 车道偏移：靠右行驶，客车走 +2.0（右侧车道中心），对向车道为 -2.0
+const RIGHT_LANE_OFFSET := 2.0
+
+
+func get_transform_at(s: float, lane_offset: float = 0.0) -> Transform3D:
 	s = clampf(s, 0.0, total_length - 0.5)
 	var i := 1
 	while i < cumulative.size() - 1 and cumulative[i] < s:
@@ -92,7 +96,8 @@ func get_transform_at(s: float) -> Transform3D:
 	var t := (s - cumulative[i - 1]) / seg_len
 	var p := a.lerp(b, t)
 	var fwd := (b - a).normalized()
-	return Transform3D(Basis.looking_at(fwd, Vector3.UP), p + Vector3.UP * 0.3)
+	var basis := Basis.looking_at(fwd, Vector3.UP)
+	return Transform3D(basis, p + Vector3.UP * 0.3 + basis.x * lane_offset)
 
 
 func get_mileage_km() -> float:
@@ -103,10 +108,10 @@ func get_total_length() -> float:
 	return total_length
 
 
-## 自动驾驶：返回 pos 沿路线前进 look_ahead 米的瞄准点
-func get_point_ahead(pos: Vector3, look_ahead: float) -> Vector3:
+## 自动驾驶：返回 pos 沿路线前进 look_ahead 米的瞄准点（默认客车右车道）
+func get_point_ahead(pos: Vector3, look_ahead: float, lane_offset: float = RIGHT_LANE_OFFSET) -> Vector3:
 	var s := get_nearest_s(pos)
-	return get_transform_at(minf(s + look_ahead, total_length - 1.0)).origin
+	return get_transform_at(minf(s + look_ahead, total_length - 1.0), lane_offset).origin
 
 
 func get_nearest_s(pos: Vector3) -> float:

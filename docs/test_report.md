@@ -121,3 +121,26 @@ AUTO_STOP_COMPLETED elapsed=175.1（停站点 3.9 m）
 | R 挡锁 | 无 | 前向 >8 km/h 禁入 R（带符号速度判定） | 防误操作；纯倒车不触发（修故障 #5） |
 
 注：AC7 性能项不受本轮改动影响（渲染内容未变，维持 16.68 ms 结论）。
+
+## 六、2026-11-14（下午）v0.1.2 三项体验功能回归
+
+手刹紧急停车（速度清零 + 红色感叹号）、H 键喇叭（程序化合成音）、对向车道交通流（机动车+非机动车）。附加：客车改走右侧车道（原压中央虚线）。
+
+### feel_check 扩展断言（headless 真实操作）
+
+```
+FEEL_HANDBRAKE: 38.8 km/h 拉手刹 0.1 s -> 0.59 km/h（要求 <1），感叹号显示=true 释放后隐藏=true
+FEEL_HORN: 按下播放=true（要求 true），松开停止=true（要求 true）
+FEEL_TRAFFIC: 6 辆对向来车（ebike、car、truck...），2 s 内全部逆向行进=true，车道偏移保持=true
+```
+
+### 全量回归（含交通流与故障 #7 修复后）
+
+```
+[AC1-load] PASS   [AC2] PASS — 38.6 km/h   [AC3] PASS — 60.3 km/h 全制动 20.8 m，直立 1.00
+[AC6] PASS — 偏差 0.2 km/h   [AC4-logic] PASS   [AC5] PASS — 2.0 m，蠕行 0 段
+TEST_SUMMARY total=6 pass=6 fail=0
+AUTO_STOP_COMPLETED elapsed=176.3（带交通流完整闭环）
+```
+
+新增诊断工具：`tests/spawn_watch.tscn`（出生点物理监视，支持 TRAFFIC_OFF/LANE0 环境变量做 2×2 隔离，曾用于定位故障 #7）。

@@ -14,8 +14,9 @@ var _displayed_speed_kmh: float = 0.0
 @onready var task_label: Label = $TaskLabel
 @onready var hint_label: Label = $HintLabel
 @onready var reverse_label: Label = $ReverseLabel
+@onready var handbrake_label: Label = $HandbrakeLabel
 
-const HINT := "W/S 油门·刹车   A/D 转向   C 切换视角   R 切倒挡   N 空挡   空格 手刹"
+const HINT := "W/S 油门·刹车   A/D 转向   C 视角   R 倒挡   N 空挡   H 喇叭   空格 手刹（紧急停车）"
 const GEAR_COLOR_REVERSE := Color(1.0, 0.28, 0.28, 1.0)
 
 
@@ -48,6 +49,8 @@ func _process(_delta: float) -> void:
 		gear_label.remove_theme_color_override("font_color")
 		speed_label.remove_theme_color_override("font_color")
 		reverse_label.visible = false
+	# 手刹紧急停车：右上角红色感叹号
+	handbrake_label.visible = bus.is_handbraking()
 
 
 ## 供 AC6 自动化测试读取（与画面显示同源）

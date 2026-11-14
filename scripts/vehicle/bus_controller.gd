@@ -72,6 +72,7 @@ func _physics_process(delta: float) -> void:
 		throttle = _throttle_pedal
 		brake_in = _brake_pedal
 	var handbrake: bool = Input.is_action_pressed("handbrake")
+	_handbrake_active = handbrake
 
 	# 注意：传带符号前向速度——倒挡锁只在"仍在向前冲"时触发，
 	# 纯倒车（负速度）不得误锁（见 DEVLOG 故障记录 #5）
@@ -100,6 +101,10 @@ func _physics_process(delta: float) -> void:
 		if w.use_as_traction:
 			b += hb_force
 		w.brake = b
+	# 手刹 = 紧急驻车（用户需求）：速度立即清零并冻结姿态
+	if handbrake:
+		linear_velocity = Vector3.ZERO
+		angular_velocity = Vector3.ZERO
 
 	# ---- 转向（速率式打轮 + 随速限角：打轮慢、回正快、高速自动收窄转角） ----
 	var steer_max_deg: float = params.get_max_steer_deg(get_speed_kmh())
@@ -134,6 +139,14 @@ func get_reverse_obstacle_distance_m() -> float:
 
 func get_speed_kmh() -> float:
 	return linear_velocity.length() * 3.6
+
+
+## 手刹是否处于拉起状态（HUD 红色感叹号提示用）
+func is_handbraking() -> bool:
+	return _handbrake_active
+
+
+var _handbrake_active: bool = false
 
 
 func get_signed_forward_speed_kmh() -> float:

@@ -30,4 +30,5 @@ suspension_max_force = 35000.0
 suspension_travel = 5.0
 damping_compression = 1.2
 damping_relaxation = 1.5
-cab_eye_transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.75, 2.35, -3.7)
+cab_eye_offset = Vector3(-0.75, 2.35, -3.7)
+cab_fov_deg = 75.0

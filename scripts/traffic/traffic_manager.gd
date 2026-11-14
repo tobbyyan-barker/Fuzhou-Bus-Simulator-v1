@@ -91,16 +91,26 @@ func get_vehicle_ahead(bus_s: float, bus_len: float = 12.0) -> Variant:
 	return best
 
 
-## 测试辅助：把过于靠近 pos 的车辆移到远处（客车传送后清场，防止重叠炸飞）。
-## 同向车推到前方 300 m（行驶远离客车，不会倒车追尾）；对向车推到前方 300 m
-## （在左侧车道正常驶过，与右侧车道客车无接触）。
-func relocate_conflicts(pos: Vector3, radius: float = 30.0) -> void:
+## 测试辅助：清走会干扰客车的车辆（传送后清场，防止重叠炸飞/挡路）。
+## - 半径 radius 内的任何车辆 → 移走
+## - clear_ahead > 0 时：客车前方 clear_ahead 米内的同向车也移走（清空行进通道）
+## 同向车目标位：客车前方 300 m；若会落入路线末端 160 m（终点进站通道），
+## 改推到客车后方 300 m——否则会把车"清"到客车与站点之间挡死进站路径。
+## 对向车推到客车前方 300 m（左侧车道驶过，无接触）。
+func relocate_conflicts(pos: Vector3, radius: float = 30.0, clear_ahead: float = 0.0) -> void:
 	if route == null:
 		return
 	var bus_s := route.get_nearest_s(pos)
+	var total := route.get_total_length()
 	for v in vehicles:
-		if v.node.global_position.distance_to(pos) < radius:
-			v.s = _find_clear_s(bus_s + 300.0, v.dir)
+		var near: bool = v.node.global_position.distance_to(pos) < radius
+		var ahead_block: bool = clear_ahead > 0.0 and v.dir > 0 \
+				and v.s > bus_s and v.s < bus_s + clear_ahead
+		if near or ahead_block:
+			var target_s: float = bus_s + 300.0
+			if v.dir > 0 and target_s > total - 160.0:
+				target_s = bus_s - 300.0
+			v.s = _find_clear_s(target_s, v.dir)
 			v.speed_mps = v.cruise_mps
 			v.node.global_transform = _pose_at(v.s, v.dir)
 
@@ -181,7 +191,13 @@ func _spawn_all() -> void:
 		entries.append({"kind": "truck", "dir": 1})
 	for _i in same_dir_ebike_count:
 		entries.append({"kind": "ebike", "dir": 1})
-	entries.shuffle()
+	# Fisher-Yates 用播种过的 _rng 洗牌（Array.shuffle() 走全局随机，
+	# 每次进程启动布局不同 → 测试结果不可复现；见 DEVLOG 故障 #10）
+	for i in range(entries.size() - 1, 0, -1):
+		var j: int = _rng.randi_range(0, i)
+		var tmp: Dictionary = entries[i]
+		entries[i] = entries[j]
+		entries[j] = tmp
 	var total: float = route.get_total_length()
 	for i in entries.size():
 		var e: Dictionary = entries[i]

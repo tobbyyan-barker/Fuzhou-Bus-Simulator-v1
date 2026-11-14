@@ -18,7 +18,7 @@ var _displayed_speed_kmh: float = 0.0
 @onready var handbrake_label: Label = $HandbrakeLabel
 @onready var signal_label: Label = $SignalLabel
 
-const HINT := "W/S 油门·刹车   A/D 转向   C 视角   R 倒挡   N 空挡   H 喇叭   空格 手刹（紧急停车）"
+const HINT := "W/S 油门·刹车   A/D 转向   C/Q 视角   R 倒挡   N 空挡   H 喇叭   空格 手刹（紧急停车）"
 const GEAR_COLOR_REVERSE := Color(1.0, 0.28, 0.28, 1.0)
 
 

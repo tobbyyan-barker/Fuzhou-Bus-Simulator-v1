@@ -1,4 +1,5 @@
-## 双视角相机管理：第一人称驾驶舱（C 键切换）↔ 第三人称阻尼跟车
+## 双视角相机管理：第一人称驾驶舱（C 或 Q 键切换）↔ 第三人称阻尼跟车
+## 切换只改变 Camera3D.current，不触碰车辆物理状态
 class_name CameraManager
 extends Node3D
 
@@ -14,8 +15,9 @@ var bus: BusController
 
 
 func _ready() -> void:
-	cab_cam.current = true
-	chase_cam.current = false
+	# 默认第三人称跟车视角（按规格：启动即跟车，Q/C 切换到驾驶舱）
+	chase_cam.current = true
+	cab_cam.current = false
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -37,8 +39,11 @@ func _physics_process(delta: float) -> void:
 	if bus == null:
 		return
 	var bus_t := bus.global_transform
-	# 驾驶舱视角：刚性绑定客车眼部位置（随车身侧倾，真实驾驶舱感）
-	cab_cam.global_transform = bus_t * bus.params.cab_eye_transform
+	# 驾驶舱视角：刚性绑定客车眼部位置（随车身侧倾，真实驾驶舱感）。
+	# 相机默认朝向客车正前方（局部 -Z）；位置/FOV 参数从车辆资源读取，
+	# Inspector 调整 mt10.tres 的 cab_eye_offset / cab_fov_deg 实时生效。
+	cab_cam.global_transform = bus_t * Transform3D(Basis(), bus.params.cab_eye_offset)
+	cab_cam.fov = bus.params.cab_fov_deg
 	# 跟车视角：水平方向阻尼跟随 + 注视客车
 	var fwd := -bus_t.basis.z
 	fwd.y = 0.0

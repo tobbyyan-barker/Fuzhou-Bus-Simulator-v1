@@ -110,3 +110,13 @@ func _ensure_input_map() -> void:
 			var ev := InputEventKey.new()
 			ev.physical_keycode = key_actions[action]
 			InputMap.action_add_event(action, ev)
+	# 视角切换支持双键：C 与 Q 均可（兜底路径也保证 Q 存在）
+	if InputMap.has_action("toggle_camera"):
+		var has_q := false
+		for ev in InputMap.action_get_events("toggle_camera"):
+			if ev is InputEventKey and ev.physical_keycode == KEY_Q:
+				has_q = true
+		if not has_q:
+			var q := InputEventKey.new()
+			q.physical_keycode = KEY_Q
+			InputMap.action_add_event("toggle_camera", q)

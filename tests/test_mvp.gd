@@ -93,7 +93,7 @@ func _run_suite() -> void:
 	_check("AC4-logic", switched, "视角切换逻辑正常（视觉确认见 GUI 测试）")
 
 	# ---- AC5：真实驾驶进站 → 停稳 3 s → stop_completed ----
-	_teleport(route.get_total_length() - 120.0)
+	_teleport(route.get_total_length() - 120.0, 140.0)  # 清空 140 m 进站通道
 	Input.action_press("accelerate")
 	guard = 0
 	while bus.global_position.distance_to(stop_task.stop_position) > 25.0 and guard < 1200:
@@ -130,6 +130,20 @@ func _run_suite() -> void:
 		if d_before - d_stop < 0.3:
 			break  # 蠕行失效保护，防止死循环
 	d_stop = _flat_dist(bus.global_position, stop_task.stop_position)
+	# 临时诊断：AC5 失败时输出附近交通车与客车状态
+	if d_stop > 5.0 or not stop_task.completed:
+		var bus_s: float = route.get_nearest_s(bus.global_position)
+		print("AC5_DBG bus_s=%.1f pos=(%.1f, %.1f) speed=%.1f mode=%s light_state=%s" % [
+				bus_s, bus.global_position.x, bus.global_position.z,
+				bus.get_speed_kmh(), bus.gearbox.mode,
+				main.traffic_lights.get_state(2) if main.traffic_lights.get_light_count() > 2 else "n/a"])
+		for v in main.traffic.get_vehicles():
+			var vs: float = v.s
+			if vs > bus_s - 40.0 and vs < bus_s + 160.0:
+				print("AC5_DBG veh kind=%s dir=%d s=%.1f speed=%.1f lat_off=%.1f" % [
+						v.kind, v.dir, vs, v.speed_mps * 3.6,
+						(v.node.global_position - route.get_transform_at(vs).origin).dot(
+								route.get_transform_at(vs).basis.x)])
 	# 保持 3 s 以上
 	await _sim(220)
 	_check("AC5", stop_task.completed and d_stop <= 5.0,
@@ -144,12 +158,12 @@ func _sim(frames: int) -> void:
 		await get_tree().physics_frame
 
 
-func _teleport(s: float) -> void:
+func _teleport(s: float, clear_ahead: float = 0.0) -> void:
 	Input.action_release("accelerate")
 	Input.action_release("brake")
 	bus.global_transform = route.get_transform_at(s, RouteManager.RIGHT_LANE_OFFSET)
-	# 传送清场：移走附近交通车（防止重叠炸飞）
-	main.traffic.relocate_conflicts(bus.global_position, 30.0)
+	# 传送清场：移走附近交通车（防重叠炸飞）；clear_ahead 清空前方同向车（防挡路）
+	main.traffic.relocate_conflicts(bus.global_position, 30.0, clear_ahead)
 	bus.linear_velocity = Vector3.ZERO
 	bus.angular_velocity = Vector3.ZERO
 	bus.sleeping = false

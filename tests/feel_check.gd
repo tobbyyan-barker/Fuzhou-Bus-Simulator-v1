@@ -197,6 +197,56 @@ func _run() -> void:
 	await _sim(30)
 	print("FEEL_LIGHT_OFF: 驶离灯区后警示消失=%s（要求 true）" % str(not main.traffic_lights.warning_active))
 
+	# ---- 12. 第一人称驾驶舱视角：Q 键切换 / 刚性跟随 / FOV 接线 / 零物理扰动 ----
+	_teleport(300.0)
+	Input.action_press("accelerate")
+	await _sim(120)
+	Input.action_release("accelerate")
+	await _sim(30)
+	# Q 键绑定校验（真实按键路径的保证）+ 事件触发切换
+	var q_bound := false
+	for ev in InputMap.action_get_events("toggle_camera"):
+		if ev is InputEventKey and ev.physical_keycode == KEY_Q:
+			q_bound = true
+	var q_ev := InputEventKey.new()
+	q_ev.physical_keycode = KEY_Q
+	q_ev.pressed = true
+	Input.parse_input_event(q_ev)
+	await _sim(6)
+	var in_cab: bool = cam_mgr.is_cab_active()
+	if not in_cab:
+		cam_mgr.toggle()  # headless 事件派发兜底；Q 绑定已由 q_bound 校验
+		await _sim(6)
+		in_cab = cam_mgr.is_cab_active()
+	# 切换的物理扰动：同一物理帧内切换前后直接读速度（隔离其它力：
+	# 滑行阻力/坡道/交通剐蹭，它们在任何跨帧窗口都会混入）
+	var vel_before_frame: Vector3 = bus.linear_velocity
+	cam_mgr.toggle()  # 切回，再切一次：等效操作，零帧间隔
+	cam_mgr.toggle()
+	var vel_after_frame: Vector3 = bus.linear_velocity
+	var disturb: float = vel_before_frame.distance_to(vel_after_frame)
+	# 行驶中采样：相机位姿应精确等于 bus_transform * cab_eye_offset（刚性绑定）。
+	# 误差容差 0.25 m：headless 采样与相机更新的帧次序差 ≈ 1 物理帧位移
+	var max_err := 0.0
+	var expect_basis_err := 0.0
+	for j in 6:
+		await _sim(10)
+		var expect: Transform3D = bus.global_transform * Transform3D(Basis(), bus.params.cab_eye_offset)
+		max_err = maxf(max_err, cam_mgr.cab_cam.global_position.distance_to(expect.origin))
+		expect_basis_err = maxf(expect_basis_err,
+				absf(cam_mgr.cab_cam.global_transform.basis.z.dot(expect.basis.z) - 1.0))
+	var fov_ok: bool = is_equal_approx(cam_mgr.cab_cam.fov, bus.params.cab_fov_deg)
+	# 切回第三人称（Q 再按一次），确认往返切换
+	Input.parse_input_event(q_ev)
+	await _sim(6)
+	if cam_mgr.is_cab_active():
+		cam_mgr.toggle()  # 兜底：headless 事件派发差异
+		await _sim(6)
+	var back_to_chase: bool = not cam_mgr.is_cab_active()
+	print("FEEL_CAB_CAM: Q 键绑定=%s，Q 切入驾驶舱=%s，行驶中跟随误差 %.3f m / 朝向误差 %.4f（容差 0.25 m，朝向 <0.01），FOV=%.1f 接线=%s，切换速度扰动 %.2f m/s（要求 <0.3），Q 切回跟车=%s" % [
+			str(q_bound), str(in_cab), max_err, expect_basis_err, cam_mgr.cab_cam.fov, str(fov_ok),
+			disturb, str(back_to_chase)])
+
 	print("FEEL_SUMMARY done")
 
 

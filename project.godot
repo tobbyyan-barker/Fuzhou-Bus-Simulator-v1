@@ -35,7 +35,7 @@ steer_right={
 }
 toggle_camera={
 "deadzone": 0.2,
-"events": [Object(InputEventKey,"physical_keycode":67)]
+"events": [Object(InputEventKey,"physical_keycode":67), Object(InputEventKey,"physical_keycode":81)]
 }
 handbrake={
 "deadzone": 0.2,

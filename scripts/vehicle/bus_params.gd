@@ -58,9 +58,13 @@ extends Resource
 @export var damping_compression: float = 1.2
 @export var damping_relaxation: float = 1.5
 
-@export_group("驾驶舱")
-## 第一人称相机眼部位置（客车局部坐标，前方为 -Z）
-@export var cab_eye_transform: Transform3D = Transform3D(Basis(), Vector3(-0.75, 2.35, -3.7))
+@export_group("驾驶舱（第一人称相机）")
+## 第一人称相机位置偏移（客车局部坐标，前方为 -Z）：
+## x = 左右偏移（+为右侧驾驶位）、y = 相机高度、z = 前后偏移（-为朝车头）
+## 三个分量均可在 Inspector（mt10.tres 资源）中单独调整
+@export var cab_eye_offset: Vector3 = Vector3(-0.75, 2.35, -3.7)
+## 第一人称相机视场角（度）。实时生效，Inspector 调整立即反映到画面
+@export var cab_fov_deg: float = 75.0
 
 
 ## 当前车速下允许的最大前轮转角（deg）：

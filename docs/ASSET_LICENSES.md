@@ -15,5 +15,6 @@
 | 右侧车道同向交通车辆 | Primitive Mesh 参数化拼装（同上，v0.1.3 双向化） | 自建，无许可负担 | 无外部模型引入 |
 | 红绿灯（灯杆/灯箱/三色灯/倒计时牌/停车线） | Primitive Mesh + Label3D 参数化生成（`scripts/traffic/traffic_light_manager.gd`） | 自建，无许可负担 | 无外部模型/贴图引入 |
 | 车内语音播报 | Windows 系统 TTS（DisplayServer，运行时调用操作系统功能，`scripts/audio/voice_announcer.gd`） | 操作系统随附功能，非素材文件 | 未引入任何音频/语音文件 |
+| V0.3 车辆音效（发动机起动/怠速/变调循环、曲轴、路面、风噪、气刹放气、驻车制动、转向灯咔嗒） | 运行时合成的 16-bit PCM（AudioStreamWAV，`scripts/audio/audio_synth.gd` + `vehicle_audio.gd`） | 自建，无许可负担 | 未引入任何音频文件；**非真实客车录音**（合成音效，如实标记）。素材选型说明：曾检索 CC0 素材（sfxmint 等，均为 AI 生成 MP3、非真实录音且循环接缝不可控），评估后维持本项目零外部素材原则 |
 
 **累计外部素材引入数：0。**

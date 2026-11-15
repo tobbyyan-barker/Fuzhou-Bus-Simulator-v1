@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=3]
+[gd_scene load_steps=13 format=3]
 
 [ext_resource type="Script" path="res://scripts/main.gd" id="1_main"]
 [ext_resource type="PackedScene" path="res://scenes/test_map.gushan.tscn" id="2_map"]
@@ -10,6 +10,8 @@
 [ext_resource type="Script" path="res://scripts/traffic/traffic_manager.gd" id="8_traffic"]
 [ext_resource type="Script" path="res://scripts/traffic/traffic_light_manager.gd" id="9_lights"]
 [ext_resource type="Script" path="res://scripts/audio/voice_announcer.gd" id="10_voice"]
+[ext_resource type="Script" path="res://scripts/audio/vehicle_audio.gd" id="11_vaudio"]
+[ext_resource type="Script" path="res://scripts/audio/turn_indicator.gd" id="12_turn"]
 
 [node name="Main" type="Node3D"]
 script = ExtResource("1_main")
@@ -23,6 +25,9 @@ script = ExtResource("8_traffic")
 
 [node name="TrafficLights" type="Node3D" parent="."]
 script = ExtResource("9_lights")
+
+[node name="VehicleAudio" type="Node" parent="."]
+script = ExtResource("11_vaudio")
 
 [node name="Voice" type="Node" parent="."]
 script = ExtResource("10_voice")
@@ -40,6 +45,9 @@ fov = 75.0
 fov = 62.0
 
 [node name="HUD" parent="." instance=ExtResource("5_hud")]
+
+[node name="TurnIndicator" type="Node" parent="."]
+script = ExtResource("12_turn")
 
 [node name="StopTask" type="Node" parent="."]
 script = ExtResource("6_task")

@@ -15,7 +15,8 @@ const TONE_B_HZ := 440.0
 
 func _ready() -> void:
 	player = AudioStreamPlayer.new()
-	player.bus = "Master"
+	# V0.3：路由到 Vehicle 总线（随视角做驾驶舱内/外听感过渡，见 vehicle_audio.gd）
+	player.bus = "Vehicle"
 	player.volume_db = -4.0
 	player.stream = _build_stream()
 	add_child(player)

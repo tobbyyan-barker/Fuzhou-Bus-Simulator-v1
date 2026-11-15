@@ -154,3 +154,20 @@
 - HUD 提示更新为 "C/Q 视角循环（跟车·车顶·左·右·驾驶舱）"。
 
 **回归结果**：AC 6/6 ×3（连跑三次全绿）；feel_check 14 项全过（FEEL_VIEW_CYCLE 顺序/回环 true，FEEL_CAB_CAM 跟随误差 0.066 m、扰动 0.00 m/s）；GUI bench 60.0 FPS / 16.67 ms；GUI 自动驾驶全路线闭环。
+
+## 2026-11-15（晚）— v0.3.0 客车驾驶音效系统（V0.3 任务书）
+
+### 设计与实现（用户任务书驱动，小规模增量：不动动力学/相机/模型）
+
+- 新文件三个：
+  - `scripts/audio/audio_synth.gd`：全部音效运行时合成 16-bit PCM。发动机循环为**动态变调**而合成——谐波与点火周期（720 rpm 六缸四冲程 = 36 Hz）锁相 + 循环整周期 + 端部交叉淡化，pitch_scale 拉伸时无缝。另有曲轴、路面、风噪、气刹放气、驻车制动、两种继电器咔嗒。
+  - `scripts/audio/vehicle_audio.gd`：发动机状态机（OFF→CRANKING→RUNNING→STOPPING，场景就绪 0.4 s 自动点火，E 键点火/熄火）+ **近似转速模型**（油门行程主导、上升滞后 0.35 s / 回落 0.9 s、松油门滑行叠加车速弱耦合的发动机制动转速；不把车速当 RPM）；行驶声（路面/风噪音量随车速，静止 -48 dB 近无声）；制动（踏板沿触发 + 0.7 s 冷却防叠加 + 停稳驻车声）；内外听感（"Vehicle" 总线低通 16 kHz↔1.8 kHz + 增益 -3.5 dB + 各声道独立舱内偏置，view_mix 4/s 连续过渡，切视角不中断声音）。所有参数 @export Inspector 可调。
+  - `scripts/audio/turn_indicator.gd`：逗号/句号左/右转向灯，0.7 s 继电器节拍（两种咔嗒交替）+ HUD 箭头闪烁，重复按同侧关闭；不做灯光渲染系统。
+- 集成：`bus_controller.gd` 仅新增两个只读 getter（get_throttle_pedal/get_brake_pedal，键盘与外部控制路径统一）；`horn.gd` 播放器路由到 Vehicle 总线（内外听感随视角过渡）；HUD 加 TurnLabel；main.tscn 加 VehicleAudio（置于 Horn 之前，保证总线先建）/TurnIndicator 节点；project.godot + main.gd 兜底加 engine_toggle(E)/signal_left(逗号)/signal_right(句号)，与既有键位无冲突。
+- 素材决策：检索 CC0 素材（sfxmint 等）均为 AI 生成 MP3、非真实录音且循环接缝不可控，维持零外部素材原则（ASSET_LICENSES.md 已登记"合成音效，非真实客车录音"）。任务书"可合法使用的原创或合成音效"路径合规。后续替换真实录音：换 stream 即可，接口不变。
+
+### 测试与坑
+
+- feel_check 新增第 13 项 FEEL_AUDIO：怠速 pitch 1.02 / 加速变调 2.91 / 松油门回落 2.15 / 路面声 -48.1→-30.2 dB / 气刹冷却防叠加（点刹再快踩 = 1 次）/ 停稳驻车声 / 转向灯 2 咔嗒 + HUD 闪烁 + 关闭 / 驾驶舱混音 1.00→0.00 且发动机不中断 / E 熄火再点火 / 三新键位绑定，全过。
+- 坑 #11（测试基建）：新增 class_name（VehicleAudio/TurnIndicator）后 headless 直接跑测试报 "Could not find type"——全局类缓存（.godot/global_script_class_cache.cfg）只在编辑器扫描时更新，CI/命令行需先跑一次 `--headless --import`。另：测试协程里误用未声明变量 `guard` 会中断协程导致零输出假死（故障 #3 同款）。
+- 回归：AC 6/6 ×3 且数值逐项与 v0.1.6 完全一致（AC2 38.6 km/h、AC3 60.2 km/h/20.7 m）——动力学零影响的直接证据；bench 9.40 ms（本机波动区间内，优于 16.7 ms 目标）；GUI 自动驾驶全路线闭环。

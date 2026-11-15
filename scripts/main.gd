@@ -14,6 +14,8 @@ var traffic: TrafficManager
 var traffic_lights: TrafficLightManager
 var voice: VoiceAnnouncer
 var horn: Horn
+var vehicle_audio: VehicleAudio
+var turn_indicator: TurnIndicator
 
 var _bench_active: bool = false
 var _bench_frames: int = 0
@@ -31,6 +33,8 @@ func _ready() -> void:
 	traffic_lights = $TrafficLights
 	voice = $Voice
 	horn = $Horn
+	vehicle_audio = $VehicleAudio
+	turn_indicator = $TurnIndicator
 	traffic_lights.setup(map)
 	traffic.setup(map, traffic_lights)
 
@@ -43,6 +47,11 @@ func _ready() -> void:
 	traffic_lights.announce_requested.connect(voice.speak)
 	cam_mgr.bus = bus
 	cam_mgr.snap_chase()
+	# V0.3 音效系统：只监听车辆状态与视角，不触碰动力学/相机逻辑
+	vehicle_audio.bus = bus
+	vehicle_audio.cam_mgr = cam_mgr
+	turn_indicator.audio = vehicle_audio
+	turn_indicator.hud = hud
 	hud.bus = bus
 	hud.route = map
 	hud.stop_task = stop_task
@@ -103,6 +112,9 @@ func _ensure_input_map() -> void:
 		"gear_r": KEY_R,
 		"gear_n": KEY_N,
 		"horn": KEY_H,
+		"engine_toggle": KEY_E,
+		"signal_left": KEY_COMMA,
+		"signal_right": KEY_PERIOD,
 	}
 	for action in key_actions:
 		if not InputMap.has_action(action):

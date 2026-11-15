@@ -267,6 +267,98 @@ func _run() -> void:
 			str(in_cab), max_err, expect_basis_err, cam_mgr.cab_cam.fov, str(fov_ok),
 			disturb, roof_above, str(left_side_ok), str(right_side_ok)])
 
+	# ---- 13. 音效系统（V0.3）：发动机状态机/转速跟踪/行驶声/制动/转向灯/内外听感 ----
+	var audio: VehicleAudio = main.vehicle_audio
+	var turn: TurnIndicator = main.turn_indicator
+	# 启动：场景就绪 0.4 s 后自动曲轴点火（1.1 s），此刻应已进入怠速运转
+	var started_ok: bool = audio.engine_state == VehicleAudio.STATE_RUNNING
+	var road_silent: float = audio.get_road_volume_db()
+	# 新键位绑定校验（E 点火 / 逗号·句号转向灯，避免与其他驾驶键冲突）
+	var e_bound := false
+	var comma_bound := false
+	var period_bound := false
+	for ev in InputMap.action_get_events("engine_toggle"):
+		if ev is InputEventKey and ev.physical_keycode == KEY_E:
+			e_bound = true
+	for ev in InputMap.action_get_events("signal_left"):
+		if ev is InputEventKey and ev.physical_keycode == KEY_COMMA:
+			comma_bound = true
+	for ev in InputMap.action_get_events("signal_right"):
+		if ev is InputEventKey and ev.physical_keycode == KEY_PERIOD:
+			period_bound = true
+	# 加速：油门踩下 → 近似转速上升（音调随 rpm 连续变调，非一次性固定音效）
+	var speed_before: float = bus.get_speed_kmh()
+	Input.action_press("accelerate")
+	await _sim(150)
+	var drive_pitch: float = audio.get_engine_pitch()
+	var drive_engine_vol: float = audio.get_engine_volume_db()
+	var drive_road_vol: float = audio.get_road_volume_db()
+	var drive_speed: float = bus.get_speed_kmh()
+	Input.action_release("accelerate")
+	# 松油门：转速回落（发动机制动耦合后向怠速收敛）
+	await _sim(60)
+	var coast_pitch: float = audio.get_engine_pitch()
+	# 制动：点刹触发放气（+1）→ 冷却期内快速再踩不叠加（仍 +1）→ 全制动停稳出驻车声
+	if bus.get_speed_kmh() < 12.0:
+		Input.action_press("accelerate")
+		await _sim(90)
+		Input.action_release("accelerate")
+	var hiss_before: int = audio.brake_hiss_count
+	Input.action_press("brake")
+	await _sim(12)
+	Input.action_release("brake")
+	await _sim(6)
+	Input.action_press("brake")
+	await _sim(30)
+	var hiss_blocked: int = audio.brake_hiss_count - hiss_before
+	Input.action_release("brake")
+	await _sim(60)
+	Input.action_press("brake")
+	var guard := 0
+	while bus.get_speed_kmh() > 1.0 and guard < 900:
+		await _sim(6)
+		guard += 6
+	Input.action_release("brake")
+	await _sim(30)
+	var hiss_total: int = audio.brake_hiss_count - hiss_before
+	var parking_ok: bool = audio.parking_count >= 1
+	# 停稳后转速回落怠速（滑行耦合解除，rpm 以松油门滞后向怠速收敛）
+	await _sim(120)
+	var idle_settled: float = audio.get_engine_pitch()
+	# 转向灯：激活后继电器节拍（≥2 咔嗒/1.7 s）+ HUD 箭头闪烁，关闭后消失
+	var clicks_before: int = audio.click_count
+	turn.set_direction(TurnIndicator.Dir.LEFT)
+	var hud_blink_seen := false
+	for j in 50:
+		await _sim(2)
+		if hud.turn_label.visible:
+			hud_blink_seen = true
+	var clicks_left: int = audio.click_count - clicks_before
+	turn.set_direction(TurnIndicator.Dir.NONE)
+	await _sim(6)
+	var turn_off: bool = not hud.turn_label.visible
+	# 内外听感：切入驾驶舱 → 总线参数连续过渡且发动机声不中断；切回外部恢复
+	cam_mgr.set_view(cam_mgr.VIEW_CAB)
+	await _sim(30)
+	var mix_in: float = audio.get_view_mix()
+	var loop_alive: bool = audio.engine_loop_playing
+	cam_mgr.set_view(cam_mgr.VIEW_CHASE)
+	await _sim(30)
+	var mix_out: float = audio.get_view_mix()
+	# 点火/熄火状态机：E 键熄火（滑行停转）→ 再点火回到怠速
+	audio.toggle_ignition()
+	await _sim(90)
+	var off_ok: bool = not audio.engine_loop_playing and audio.engine_state == VehicleAudio.STATE_OFF
+	audio.toggle_ignition()
+	await _sim(150)
+	var restart_ok: bool = audio.engine_state == VehicleAudio.STATE_RUNNING
+	print("FEEL_AUDIO: 自动点火怠速运转=%s，停稳怠速 pitch %.2f（应≈1），加速变调 %.1f→%.1f km/h pitch %.2f（应比怠速高 0.3 以上），松油门回落 pitch %.2f，路面声静止 %.1f dB → 行驶 %.1f dB（静止应 ≤-40），气刹点刹 %d 次（冷却防叠加=%s，应 1），全制动共 %d 次停稳驻车声=%s，转向灯咔嗒 %d 个+HUD闪烁=%s+关闭=%s，驾驶舱混音 %.2f→ %.2f（发动机不中断=%s），E 熄火=%s 再点火=%s，键位 E/逗号/句号=%s/%s/%s" % [
+			str(started_ok), idle_settled, speed_before, drive_speed, drive_pitch, coast_pitch,
+			road_silent, drive_road_vol, hiss_blocked, str(hiss_blocked == 1), hiss_total,
+			str(parking_ok), clicks_left, str(hud_blink_seen), str(turn_off),
+			mix_in, mix_out, str(loop_alive), str(off_ok), str(restart_ok),
+			str(e_bound), str(comma_bound), str(period_bound)])
+
 	print("FEEL_SUMMARY done")
 
 

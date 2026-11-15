@@ -17,8 +17,9 @@ var _displayed_speed_kmh: float = 0.0
 @onready var reverse_label: Label = $ReverseLabel
 @onready var handbrake_label: Label = $HandbrakeLabel
 @onready var signal_label: Label = $SignalLabel
+@onready var turn_label: Label = $TurnLabel
 
-const HINT := "W/S 油门·刹车   A/D 转向   C/Q 视角循环（跟车·车顶·左·右·驾驶舱）   R 倒挡   N 空挡   H 喇叭   空格 手刹（紧急停车）"
+const HINT := "W/S 油门·刹车   A/D 转向   C/Q 视角循环   R 倒挡   N 空挡   < > 转向灯   H 喇叭   E 点火/熄火   空格 手刹"
 const GEAR_COLOR_REVERSE := Color(1.0, 0.28, 0.28, 1.0)
 
 
@@ -64,3 +65,12 @@ func _process(_delta: float) -> void:
 ## 供 AC6 自动化测试读取（与画面显示同源）
 func get_displayed_speed_kmh() -> float:
 	return _displayed_speed_kmh
+
+
+## 转向灯指示（V0.3，由 TurnIndicator 每帧驱动）：dir 0=关 1=左 2=右
+func set_turn_indicator(dir: int) -> void:
+	if dir == 0:
+		turn_label.visible = false
+	else:
+		turn_label.text = "◀ 左转" if dir == 1 else "右转 ▶"
+		turn_label.visible = true

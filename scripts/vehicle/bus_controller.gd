@@ -153,6 +153,16 @@ func get_signed_forward_speed_kmh() -> float:
 	return linear_velocity.dot(-global_transform.basis.z) * 3.6
 
 
+## ---- 音效系统（V0.3）只读状态接口：返回平滑后的踏板行程 ----
+## 仅供 VehicleAudio 监听（键盘与外部控制两种路径统一），不改变任何动力学行为
+func get_throttle_pedal() -> float:
+	return _throttle_pedal
+
+
+func get_brake_pedal() -> float:
+	return _brake_pedal
+
+
 func get_gear_text() -> String:
 	return gearbox.get_display_text()
 
